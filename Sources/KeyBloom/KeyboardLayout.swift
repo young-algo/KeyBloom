@@ -95,4 +95,8 @@ enum KeyboardLayout {
         114: "?", 115: "↖", 116: "⇞", 117: "⌦", 119: "↘",
         121: "⇟", 123: "←", 124: "→", 125: "↓", 126: "↑"
     ]
+
+    static func row(for keyCode: UInt16) -> Int? {
+        rows.firstIndex { $0.contains(keyCode) }
+    }
 }

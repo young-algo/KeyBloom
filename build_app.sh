@@ -7,6 +7,7 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
 fi
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+source "$ROOT_DIR/scripts/swift_env.sh"
 APP_NAME="KeyBloom"
 BINARY_NAME="KeyBloom"
 DIST_DIR="$ROOT_DIR/dist"

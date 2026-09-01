@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LaunchView: View {
     @EnvironmentObject private var coordinator: GameCoordinator
+    @StateObject private var previewModel = GameModel()
 
     var body: some View {
         ZStack {
@@ -31,7 +32,11 @@ struct LaunchView: View {
         .preferredColorScheme(.dark)
         .onAppear {
             coordinator.refreshAccessibilityPermission()
+            resetPreview()
         }
+        .onChange(of: coordinator.palette) { _, _ in resetPreview() }
+        .onChange(of: coordinator.showLabels) { _, _ in resetPreview() }
+        .onChange(of: coordinator.calmMotion) { _, _ in resetPreview() }
     }
 
     private var header: some View {
@@ -48,17 +53,11 @@ struct LaunchView: View {
     }
 
     private var preview: some View {
-        HStack(spacing: 18) {
-            PreviewBloom(symbol: "A", hue: 0.02, rotation: -8)
-            PreviewBloom(symbol: "✦", hue: 0.14, rotation: 7)
-            PreviewBloom(symbol: "⌘", hue: 0.53, rotation: -5)
-            PreviewBloom(symbol: "●", hue: 0.75, rotation: 9)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        LivePreview(model: previewModel)
+        .frame(height: 220)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(.white.opacity(0.10), lineWidth: 1)
         }
     }
@@ -66,13 +65,7 @@ struct LaunchView: View {
     private var settings: some View {
         VStack(spacing: 0) {
             SettingRow(title: "Colors", subtitle: coordinator.palette.subtitle) {
-                Picker("Colors", selection: $coordinator.palette) {
-                    ForEach(BloomPalette.allCases) { palette in
-                        Text(palette.title).tag(palette)
-                    }
-                }
-                .labelsHidden()
-                .frame(width: 145)
+                PaletteSwatches(selection: $coordinator.palette)
             }
 
             divider
@@ -224,6 +217,15 @@ struct LaunchView: View {
             .frame(height: 1)
             .padding(.leading, 18)
     }
+
+    private func resetPreview() {
+        previewModel.reset(
+            palette: coordinator.palette,
+            showLabels: coordinator.showLabels,
+            calmMotion: coordinator.calmMotion
+        )
+        [0, 12, 18, 6, 49, 36].forEach { previewModel.registerKey(keyCode: UInt16($0)) }
+    }
 }
 
 private struct SettingRow<Accessory: View>: View {
@@ -259,33 +261,55 @@ private struct SettingRow<Accessory: View>: View {
     }
 }
 
-private struct PreviewBloom: View {
-    let symbol: String
-    let hue: Double
-    let rotation: Double
+private struct LivePreview: View {
+    @ObservedObject var model: GameModel
+    @State private var sampleIndex = 0
+    private let timer = Timer.publish(every: 1.1, on: .main, in: .common).autoconnect()
+    private let sampleKeys: [UInt16] = [0, 12, 18, 6, 49, 36]
 
     var body: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [
-                            Color(hue: hue, saturation: 0.75, brightness: 1.0),
-                            Color(hue: hue, saturation: 0.90, brightness: 0.72)
-                        ],
-                        center: .topLeading,
-                        startRadius: 1,
-                        endRadius: 55
-                    )
-                )
-                .shadow(color: Color(hue: hue, saturation: 0.80, brightness: 1.0).opacity(0.42), radius: 14)
+        GameView(model: model)
+            .allowsHitTesting(false)
+            .onReceive(timer) { _ in
+                model.registerKey(keyCode: sampleKeys[sampleIndex % sampleKeys.count])
+                sampleIndex += 1
+            }
+            .accessibilityLabel("Live preview of the selected KeyBloom settings")
+    }
+}
 
-            Text(symbol)
-                .font(.system(size: symbol == "⌘" ? 30 : 34, weight: .black, design: .rounded))
-                .foregroundStyle(.white)
+private struct PaletteSwatches: View {
+    @Binding var selection: BloomPalette
+
+    var body: some View {
+        HStack(spacing: 8) {
+            ForEach(BloomPalette.allCases) { palette in
+                Button {
+                    selection = palette
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(.black.opacity(0.24))
+                        ForEach(0..<4, id: \.self) { index in
+                            let angle = CGFloat(index) / 4 * .pi * 2 - .pi / 2
+                            Circle()
+                                .fill(PerceptualColor.bloom(hue: palette.hue(offset: Double(index) / 4)))
+                                .frame(width: 10, height: 10)
+                                .offset(x: cos(angle) * 10, y: sin(angle) * 10)
+                        }
+                    }
+                    .frame(width: 38, height: 38)
+                    .overlay {
+                        Circle()
+                            .stroke(selection == palette ? .white : .white.opacity(0.18), lineWidth: selection == palette ? 3 : 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .help(palette.title)
+                .accessibilityLabel(palette.title)
+                .accessibilityAddTraits(selection == palette ? .isSelected : [])
+            }
         }
-        .frame(width: 74, height: 74)
-        .rotationEffect(.degrees(rotation))
     }
 }
 

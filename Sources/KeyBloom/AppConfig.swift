@@ -26,5 +26,9 @@ enum AppConfig {
     /// Visual limits keep long key holds responsive without allowing an unbounded scene.
     static let maximumBursts = 84
     static let burstLifetime: TimeInterval = 3.4
+    static let confettiLifetime: TimeInterval = 4.6
+    static let calmLifetimeMultiplier = 1.35
     static let repeatKeyMinimumInterval: TimeInterval = 0.065
+    static let dragTrailInterval: TimeInterval = 0.045
+    static let maximumSpawnsPerHalfSecond = 6
 }

@@ -89,10 +89,11 @@ final class GameCoordinator: ObservableObject {
             return
         }
 
+        let systemPrefersCalm = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         model.reset(
             palette: palette,
             showLabels: showLabels,
-            calmMotion: calmMotion
+            calmMotion: calmMotion || systemPrefersCalm
         )
         pressedKeyCodes.removeAll(keepingCapacity: true)
         lastRepeatTimeByKey.removeAll(keepingCapacity: true)
@@ -195,6 +196,9 @@ final class GameCoordinator: ObservableObject {
         case .leftMouseDown, .rightMouseDown, .otherMouseDown:
             handleLocalPointer(event)
 
+        case .leftMouseDragged, .rightMouseDragged, .otherMouseDragged:
+            handleLocalDrag(event)
+
         case .scrollWheel:
             handleScroll(delta: event.scrollingDeltaY)
 
@@ -232,14 +236,21 @@ final class GameCoordinator: ObservableObject {
 
     func handleGlobalPointer(_ point: CGPoint) {
         guard isRunning else { return }
-        let bounds = CGDisplayBounds(CGMainDisplayID())
-        guard bounds.width > 0, bounds.height > 0 else { return }
+        guard let bounds = displayBounds(containing: point) else { return }
 
         let normalized = CGPoint(
             x: (point.x - bounds.minX) / bounds.width,
             y: (point.y - bounds.minY) / bounds.height
         )
         model.registerPointer(normalizedPosition: normalized)
+    }
+
+    func handleGlobalDrag(_ point: CGPoint) {
+        guard isRunning, let bounds = displayBounds(containing: point) else { return }
+        model.registerDrag(normalizedPosition: CGPoint(
+            x: (point.x - bounds.minX) / bounds.width,
+            y: (point.y - bounds.minY) / bounds.height
+        ))
     }
 
     func handleScroll(delta: CGFloat) {
@@ -446,19 +457,39 @@ final class GameCoordinator: ObservableObject {
     // MARK: - Helpers
 
     private func handleLocalPointer(_ event: NSEvent) {
+        guard let normalized = normalizedLocalPosition(for: event) else { return }
+        model.registerPointer(normalizedPosition: normalized)
+    }
+
+    private func handleLocalDrag(_ event: NSEvent) {
+        guard let normalized = normalizedLocalPosition(for: event) else { return }
+        model.registerDrag(normalizedPosition: normalized)
+    }
+
+    private func normalizedLocalPosition(for event: NSEvent) -> CGPoint? {
         guard let window = event.window ?? primaryWindow,
               let contentView = window.contentView,
               contentView.bounds.width > 0,
               contentView.bounds.height > 0 else {
-            return
+            return nil
         }
 
         let point = event.locationInWindow
-        let normalized = CGPoint(
+        return CGPoint(
             x: point.x / contentView.bounds.width,
             y: 1.0 - (point.y / contentView.bounds.height)
         )
-        model.registerPointer(normalizedPosition: normalized)
+    }
+
+    private func displayBounds(containing point: CGPoint) -> CGRect? {
+        var display = CGMainDisplayID()
+        var found = CGDirectDisplayID(0)
+        var matches: UInt32 = 0
+        if CGGetDisplaysWithPoint(point, 1, &found, &matches) == .success, matches > 0 {
+            display = found
+        }
+        let bounds = CGDisplayBounds(display)
+        return bounds.width > 0 && bounds.height > 0 ? bounds : nil
     }
 
     private func displayLabel(from event: NSEvent) -> String {

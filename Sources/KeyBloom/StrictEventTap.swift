@@ -134,6 +134,12 @@ final class StrictEventTap {
                 coordinator.handleGlobalPointer(point)
             }
 
+        case .leftMouseDragged, .rightMouseDragged, .otherMouseDragged:
+            let point = event.location
+            DispatchQueue.main.async {
+                coordinator.handleGlobalDrag(point)
+            }
+
         case .scrollWheel:
             let delta = event.getDoubleValueField(.scrollWheelEventDeltaAxis1)
             DispatchQueue.main.async {

@@ -34,33 +34,41 @@ enum BloomPalette: String, CaseIterable, Identifiable {
         }
     }
 
-    func hue(for index: Int, keyCode: UInt16) -> Double {
-        let offset = Double((index * 17 + Int(keyCode) * 7) % 1000) / 1000.0
+    /// Stable key identity: neighboring key codes are spread around the palette.
+    func hue(forKeyCode keyCode: UInt16) -> Double {
+        let offset = (Double(keyCode) * 0.6180339887).truncatingRemainder(dividingBy: 1)
+        return hue(offset: offset)
+    }
 
+    /// Pointer, chord, and scroll events have no key identity, so their colors vary.
+    func hue(forEvent index: Int) -> Double {
+        hue(offset: Double((index * 137) % 360) / 360.0)
+    }
+
+    func hue(offset: Double) -> Double {
         switch self {
         case .rainbow:
             return offset
         case .ocean:
-            return 0.48 + (offset * 0.22)
+            return (200.0 + offset * 90.0) / 360.0
         case .sunset:
-            // Wrap a warm range around the hue boundary.
-            let warm = 0.91 + (offset * 0.20)
+            let warm = 340.0 / 360.0 + offset * (90.0 / 360.0)
             return warm.truncatingRemainder(dividingBy: 1.0)
         case .meadow:
-            return 0.18 + (offset * 0.30)
+            return (110.0 + offset * 100.0) / 360.0
         }
     }
 
     var backgroundHues: (Double, Double, Double) {
         switch self {
         case .rainbow:
-            return (0.64, 0.77, 0.93)
+            return (0.72, 0.84, 0.02)
         case .ocean:
-            return (0.55, 0.61, 0.70)
+            return (0.68, 0.76, 0.84)
         case .sunset:
-            return (0.91, 0.02, 0.10)
+            return (0.78, 0.86, 0.92)
         case .meadow:
-            return (0.31, 0.43, 0.57)
+            return (0.46, 0.54, 0.62)
         }
     }
 }

@@ -5,10 +5,11 @@ KeyBloom is a native macOS keyboard playground for a baby or toddler. Every key 
 ## Behavior
 
 - Borderless full-screen windows cover every connected display.
-- Random keys create bubbles, flowers, stars, comets, rings, pinwheels, and occasional confetti.
-- Holding a key produces a rate-limited stream instead of overwhelming the renderer.
+- Keyboard rows create predictable effect families: stars, bubbles, flowers, and pinwheels, with dedicated effects for Space, Return, and Delete.
+- Every key keeps a stable color within its palette, while chords and pointer events continue to vary.
+- Holding a key pulses and extends its existing bloom instead of stacking a flickering stream.
 - Three or more simultaneous keys create a larger “chord” celebration.
-- Mouse and trackpad clicks create ripples; scrolling creates arrows and comets.
+- Mouse and trackpad clicks create ripples, drags paint a soft bubble trail, and scrolling creates directional comets.
 - The cursor is hidden during play.
 - Motion is deliberately smooth, with no full-screen flashes or rapid strobing.
 - Sound is omitted by design.
@@ -113,10 +114,28 @@ Edit `Sources/KeyBloom/AppConfig.swift` to change:
 
 - Exit hold duration
 - Maximum active bursts
-- Key-repeat visual rate
-- Visual lifetime
+- Global spawn budget and drag-trail rate
+- Bloom, confetti, and calm-mode lifetimes
 
 Edit `Sources/KeyBloom/GameModel.swift` to change how keys select effects. Edit `Sources/KeyBloom/GameView.swift` to change the rendering.
+
+## Visual development
+
+Launch the deterministic effect showcase without entering Baby Mode:
+
+```bash
+./scripts/open_showcase.sh
+```
+
+Render every palette in standard and calm motion to `docs/showcase/`:
+
+```bash
+./scripts/render_showcase.sh
+```
+
+The renderer is split into one type per effect under `Sources/KeyBloom/Effects/`. Every effect receives the same computed frame, shared pop/hold/fade envelope, deterministic random generator, and perceptually even bloom color.
+
+For performance work, `./scripts/profile_renderer.sh 1 15` and `./scripts/profile_renderer.sh 2 15` record repeatable one- and two-display stress traces with 84 live blooms. See `docs/performance.md` before changing display refresh or the active-burst ceiling.
 
 ## Safety boundaries
 
