@@ -7,13 +7,22 @@ if [[ "$(uname -s)" != "Darwin" ]]; then
 fi
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
-source "$ROOT_DIR/scripts/swift_env.sh"
 APP_NAME="KeyBloom"
 BINARY_NAME="KeyBloom"
 DIST_DIR="$ROOT_DIR/dist"
 APP_BUNDLE="$DIST_DIR/$APP_NAME.app"
 INSTALL_DIR="$HOME/Applications"
 INSTALL_APP="$INSTALL_DIR/$APP_NAME.app"
+
+# Prefer the compatible SDK on Macs whose Command Line Tools default to a
+# mismatched beta SDK. Keep module caches in a writable temporary location.
+if [[ -z "${SDKROOT:-}" && -d /Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk ]]; then
+  export SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX15.4.sdk
+fi
+
+CACHE_BASE="${TMPDIR:-/tmp}/keybloom-module-cache"
+export CLANG_MODULE_CACHE_PATH="${CLANG_MODULE_CACHE_PATH:-$CACHE_BASE/clang}"
+export SWIFTPM_MODULECACHE_OVERRIDE="${SWIFTPM_MODULECACHE_OVERRIDE:-$CACHE_BASE/swiftpm}"
 
 if ! command -v swift >/dev/null 2>&1; then
   echo "Swift was not found. Install Apple's command-line developer tools with:"
@@ -29,7 +38,7 @@ BIN_DIR="$(swift build -c release --show-bin-path)"
 ICON_FILE="$ROOT_DIR/Assets/AppIcon.icns"
 if [[ ! -f "$ICON_FILE" ]]; then
   echo "ERROR: app icon not found at $ICON_FILE"
-  echo "       Generate it first (see docs/superpowers/plans/2026-08-29-keybloom-app-icon.md, Task 1)."
+  echo "       Restore Assets/AppIcon.icns before building."
   exit 1
 fi
 

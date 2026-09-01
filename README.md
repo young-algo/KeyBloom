@@ -60,16 +60,6 @@ After changing the signing identity, clear the stale grant and re-approve:
 tccutil reset Accessibility com.kevinturner.keybloom
 ```
 
-### Diagnosing input problems
-
-Launch with logging enabled to record every key event the app actually receives:
-
-```bash
-KEYBLOOM_DEBUG=1 ~/Applications/KeyBloom.app/Contents/MacOS/KeyBloom
-```
-
-Events are appended to `~/Library/Logs/KeyBloom.log`. This is the fastest way to tell whether a key is being handled incorrectly or is never reaching the app at all.
-
 ## Build and install
 
 Requirements:
@@ -108,34 +98,13 @@ open "dist/KeyBloom.app"
 
 After rebuilding the executable, macOS may ask you to re-enable the Accessibility permission. Installing at the same `~/Applications/KeyBloom.app` path keeps the workflow predictable.
 
-## Easy customizations
+## Repository contents
 
-Edit `Sources/KeyBloom/AppConfig.swift` to change:
-
-- Exit hold duration
-- Maximum active bursts
-- Global spawn budget and drag-trail rate
-- Bloom, confetti, and calm-mode lifetimes
-
-Edit `Sources/KeyBloom/GameModel.swift` to change how keys select effects. Edit `Sources/KeyBloom/GameView.swift` to change the rendering.
-
-## Visual development
-
-Launch the deterministic effect showcase without entering Baby Mode:
-
-```bash
-./scripts/open_showcase.sh
-```
-
-Render every palette in standard and calm motion to `docs/showcase/`:
-
-```bash
-./scripts/render_showcase.sh
-```
-
-The renderer is split into one type per effect under `Sources/KeyBloom/Effects/`. Every effect receives the same computed frame, shared pop/hold/fade envelope, deterministic random generator, and perceptually even bloom color.
-
-For performance work, `./scripts/profile_renderer.sh 1 15` and `./scripts/profile_renderer.sh 2 15` record repeatable one- and two-display stress traces with 84 live blooms. See `docs/performance.md` before changing display refresh or the active-burst ceiling.
+- `Sources/KeyBloom/` contains the application source.
+- `Assets/AppIcon.icns` is the app icon embedded by the build.
+- `Package.swift` defines the Swift package.
+- `build_app.sh` creates, signs, installs, and opens the macOS app bundle.
+- `README.md` contains the user and build documentation.
 
 ## Safety boundaries
 

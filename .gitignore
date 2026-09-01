@@ -3,3 +3,7 @@ dist/
 .DS_Store
 .swiftpm/
 tmp/
+docs/
+scripts/
+PRODUCT.md
+Assets/AppIcon.png

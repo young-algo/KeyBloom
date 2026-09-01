@@ -127,8 +127,6 @@ final class GameCoordinator: ObservableObject {
             return
         }
 
-        DebugLog.write("started babyMode strongLock=\(strongLock) inputStarted=\(inputStarted)")
-
         setupWindows.forEach { $0.orderOut(nil) }
         hideCursor()
         bringKioskToFront()
@@ -268,10 +266,6 @@ final class GameCoordinator: ObservableObject {
         hasEmergencyExitModifiers: Bool
     ) {
         exitModifiersHeld = hasExitModifiers
-        DebugLog.write(
-            "keyDown code=\(keyCode) exitMods=\(hasExitModifiers) emergency=\(hasEmergencyExitModifiers) repeat=\(isRepeat)"
-        )
-
         if AppConfig.isExitKey(keyCode) {
             heldExitKeys.insert(keyCode)
             // Order-independent: the chord completes whenever an exit key and all four
@@ -311,7 +305,6 @@ final class GameCoordinator: ObservableObject {
 
     private func handleKeyUp(keyCode: UInt16, hasExitModifiers: Bool) {
         exitModifiersHeld = hasExitModifiers
-        DebugLog.write("keyUp code=\(keyCode) exitMods=\(hasExitModifiers)")
         heldExitKeys.remove(keyCode)
         evaluateExitChord()
 
@@ -329,9 +322,6 @@ final class GameCoordinator: ObservableObject {
         modifierIsPressed: Bool
     ) {
         exitModifiersHeld = hasExitModifiers
-        DebugLog.write(
-            "flagsChanged code=\(keyCode) exitMods=\(hasExitModifiers) exitKeys=\(heldExitKeys.sorted())"
-        )
         evaluateExitChord()
 
         if modifierIsPressed {
@@ -351,14 +341,9 @@ final class GameCoordinator: ObservableObject {
     private func beginUnlockHold() {
         guard unlockWorkItem == nil else { return }
 
-        DebugLog.write("unlock hold STARTED")
         model.unlockStartedAt = Date()
         let workItem = DispatchWorkItem { [weak self] in
-            guard let self, self.isRunning, self.model.unlockStartedAt != nil else {
-                DebugLog.write("unlock hold fired but preconditions failed")
-                return
-            }
-            DebugLog.write("unlock hold COMPLETED - terminating")
+            guard let self, self.isRunning, self.model.unlockStartedAt != nil else { return }
             self.stopAndTerminate()
         }
         unlockWorkItem = workItem
@@ -369,9 +354,6 @@ final class GameCoordinator: ObservableObject {
     }
 
     private func cancelUnlockHold() {
-        if unlockWorkItem != nil {
-            DebugLog.write("unlock hold CANCELLED")
-        }
         unlockWorkItem?.cancel()
         unlockWorkItem = nil
         model.unlockStartedAt = nil
