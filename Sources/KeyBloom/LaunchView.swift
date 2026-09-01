@@ -224,9 +224,27 @@ struct LaunchView: View {
             showLabels: coordinator.showLabels,
             calmMotion: coordinator.calmMotion
         )
-        [0, 12, 18, 6, 49, 36].forEach { previewModel.registerKey(keyCode: UInt16($0)) }
+        previewSamples.prefix(3).forEach { sample in
+            previewModel.registerKey(keyCode: sample.keyCode, at: sample.position)
+        }
     }
 }
+
+private struct PreviewSample {
+    let keyCode: UInt16
+    let position: CGPoint
+}
+
+/// A compact constellation keeps the setup preview's activity around its focal point.
+/// Baby Mode still uses the real keyboard layout so cause and effect remain learnable.
+private let previewSamples: [PreviewSample] = [
+    PreviewSample(keyCode: 18, position: CGPoint(x: 0.50, y: 0.34)),
+    PreviewSample(keyCode: 12, position: CGPoint(x: 0.44, y: 0.47)),
+    PreviewSample(keyCode: 0, position: CGPoint(x: 0.56, y: 0.48)),
+    PreviewSample(keyCode: 6, position: CGPoint(x: 0.46, y: 0.63)),
+    PreviewSample(keyCode: 49, position: CGPoint(x: 0.55, y: 0.64)),
+    PreviewSample(keyCode: 51, position: CGPoint(x: 0.50, y: 0.77))
+]
 
 private struct SettingRow<Accessory: View>: View {
     let title: String
@@ -263,15 +281,15 @@ private struct SettingRow<Accessory: View>: View {
 
 private struct LivePreview: View {
     @ObservedObject var model: GameModel
-    @State private var sampleIndex = 0
+    @State private var sampleIndex = 3
     private let timer = Timer.publish(every: 1.1, on: .main, in: .common).autoconnect()
-    private let sampleKeys: [UInt16] = [0, 12, 18, 6, 49, 36]
 
     var body: some View {
         GameView(model: model)
             .allowsHitTesting(false)
             .onReceive(timer) { _ in
-                model.registerKey(keyCode: sampleKeys[sampleIndex % sampleKeys.count])
+                let sample = previewSamples[sampleIndex % previewSamples.count]
+                model.registerKey(keyCode: sample.keyCode, at: sample.position)
                 sampleIndex += 1
             }
             .accessibilityLabel("Live preview of the selected KeyBloom settings")

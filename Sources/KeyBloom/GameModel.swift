@@ -78,7 +78,12 @@ final class GameModel: ObservableObject {
         unlockStartedAt = nil
     }
 
-    func registerKey(keyCode: UInt16, label: String? = nil, isRepeat: Bool = false) {
+    func registerKey(
+        keyCode: UInt16,
+        at normalizedPosition: CGPoint? = nil,
+        label: String? = nil,
+        isRepeat: Bool = false
+    ) {
         pruneExpiredBursts()
         if isRepeat, pulseExistingBurst(forKey: keyCode) { return }
         guard spawnBudgetAllows() else {
@@ -87,7 +92,8 @@ final class GameModel: ObservableObject {
         }
 
         pressCount += 1
-        let base = KeyboardLayout.normalizedPosition(for: keyCode, pressIndex: pressCount)
+        let base = normalizedPosition.map(clampedPosition)
+            ?? KeyboardLayout.normalizedPosition(for: keyCode, pressIndex: pressCount)
         let jitter: CGFloat = calmMotion ? 0.018 : 0.030
         let position = CGPoint(
             x: clamp(base.x + CGFloat.random(in: -jitter...jitter), lower: 0.06, upper: 0.94),

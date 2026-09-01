@@ -41,6 +41,18 @@ enum KeyBloomSelfCheck {
         try require(repeatModel.bursts[0].lastPulseAt != nil, "a repeat did not pulse its bloom")
         try require(repeatModel.bursts[0].lifetime > originalLifetime, "a repeat did not extend bloom life")
 
+        let positionedModel = GameModel()
+        positionedModel.reset(palette: .rainbow, showLabels: true, calmMotion: true)
+        positionedModel.registerKey(keyCode: 18, at: CGPoint(x: 0.5, y: 0.5))
+        guard let positionedBurst = positionedModel.bursts.last else {
+            throw Failure(message: "a positioned preview key did not spawn")
+        }
+        try require(
+            abs(positionedBurst.position.x - 0.5) <= 0.02
+                && abs(positionedBurst.position.y - 0.5) <= 0.02,
+            "a positioned preview key ignored its requested focal point"
+        )
+
         let scrollModel = GameModel()
         scrollModel.reset(palette: .rainbow, showLabels: true, calmMotion: false)
         scrollModel.registerScroll(direction: -1)

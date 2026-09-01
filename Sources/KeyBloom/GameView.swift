@@ -156,7 +156,14 @@ enum BloomRenderer {
             layer.opacity = Double(envelope.opacity)
             burst.kind.effect.draw(frame, in: &layer, random: &random)
             if showLabel {
-                drawLabel(burst.label, in: &layer, center: center, radius: radius, progress: progress)
+                drawLabel(
+                    burst.label,
+                    in: &layer,
+                    center: center,
+                    radius: radius,
+                    progress: progress,
+                    hue: burst.hue
+                )
             }
         }
     }
@@ -198,13 +205,26 @@ enum BloomRenderer {
         in context: inout GraphicsContext,
         center: CGPoint,
         radius: CGFloat,
-        progress: CGFloat
+        progress: CGFloat,
+        hue: Double
     ) {
         guard !label.isEmpty else { return }
         let entrance = min(progress / 0.22, 1)
         let bounce = 0.90 + sin(entrance * .pi) * 0.12
-        let fontSize = max(34, radius * 0.73 * bounce)
-        let haloRadius = max(28, radius * 0.55)
+        let fontSize = max(34, radius * 0.70 * bounce)
+        let haloRadius = max(30, radius * 0.58)
+        let backdropCore = PerceptualColor.bloom(
+            hue: hue,
+            lightness: 0.22,
+            chroma: 0.07,
+            opacity: 0.94
+        )
+        let backdropEdge = PerceptualColor.bloom(
+            hue: hue,
+            lightness: 0.28,
+            chroma: 0.09,
+            opacity: 0.48
+        )
         context.fill(
             Path(ellipseIn: CGRect(
                 x: center.x - haloRadius,
@@ -213,28 +233,39 @@ enum BloomRenderer {
                 height: haloRadius * 2
             )),
             with: .radialGradient(
-                Gradient(colors: [.white.opacity(0.42), .white.opacity(0)]),
+                Gradient(colors: [backdropCore, backdropEdge, .clear]),
                 center: center,
-                startRadius: 0,
+                startRadius: haloRadius * 0.08,
                 endRadius: haloRadius
             )
         )
 
         let shadow = context.resolve(
             Text(label)
-                .font(.system(size: 100, weight: .black, design: .rounded))
-                .foregroundStyle(.black.opacity(0.35))
+                .font(.system(size: 100, weight: .heavy, design: .rounded))
+                .foregroundStyle(
+                    PerceptualColor.bloom(
+                        hue: hue,
+                        lightness: 0.10,
+                        chroma: 0.035,
+                        opacity: 0.72
+                    )
+                )
         )
-        let ink = Color(white: 0.10)
+        let ink = PerceptualColor.bloom(
+            hue: hue,
+            lightness: 0.96,
+            chroma: 0.018
+        )
         let resolved = context.resolve(
             Text(label)
-                .font(.system(size: 100, weight: .black, design: .rounded))
+                .font(.system(size: 100, weight: .heavy, design: .rounded))
                 .foregroundStyle(ink)
         )
         var labelLayer = context
         labelLayer.translateBy(x: center.x, y: center.y)
         labelLayer.scaleBy(x: fontSize / 100, y: fontSize / 100)
-        labelLayer.draw(shadow, at: CGPoint(x: 2.5, y: 3.5), anchor: .center)
+        labelLayer.draw(shadow, at: CGPoint(x: 1.8, y: 2.6), anchor: .center)
         labelLayer.draw(resolved, at: .zero, anchor: .center)
     }
 }
