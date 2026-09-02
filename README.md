@@ -1,6 +1,6 @@
 # KeyBloom
 
-KeyBloom is a native macOS keyboard playground for a baby or toddler. Every key press creates a large, colorful bloom at roughly the matching part of the keyboard. Multi-key mashing triggers a larger celebration. Nothing is typed into a text field, stored, or sent anywhere.
+KeyBloom is a native macOS keyboard playground for a baby or toddler. Adults are also supported. Every key press creates a large, colorful bloom at roughly the matching part of the keyboard. Multi-key mashing triggers a larger celebration. Nothing is typed into a text field, stored, or sent anywhere.
 
 ## Behavior
 
