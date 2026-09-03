@@ -2,6 +2,12 @@
 
 KeyBloom is a native macOS keyboard playground for a baby or toddler. Adults are also supported. Every key press creates a large, colorful bloom at roughly the matching part of the keyboard. Multi-key mashing triggers a larger celebration. Nothing is typed into a text field, stored, or sent anywhere.
 
+## In action
+
+Different keyboard rows bloom into bubbles, flowers, stars, rings, pinwheels, and comets.
+
+![KeyBloom responding to a sequence of key presses with colorful animated effects](Assets/readme/visualizations.gif)
+
 ## Behavior
 
 - Borderless full-screen windows cover every connected display.
@@ -33,6 +39,10 @@ Hold these five keys together for 1.5 seconds:
 **Control + Option + Shift + Command + Delete**
 
 Backslash (`\`) is accepted in place of Delete. Order does not matter — the countdown starts as soon as all five are down, and releasing any one of them cancels it. A small progress ring appears in the top-right corner while the hold is in progress.
+
+The modifier keys still bloom as the adult chord is assembled. Completing the hold closes KeyBloom and returns to the macOS desktop.
+
+![Control, Option, Shift, and Command blooming while the adult unlock ring fills, followed by KeyBloom returning to the macOS desktop](Assets/readme/adult-unlock.gif)
 
 **Emergency exit:** Command + Option + Escape exits immediately. The Mac's physical power controls remain a final fallback.
 
