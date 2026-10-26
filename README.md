@@ -4,9 +4,19 @@ KeyBloom is a native macOS keyboard playground for a baby or toddler. Adults are
 
 ## In action
 
+KeyBloom has two visualization styles, chosen in the setup window.
+
+### Blooms
+
 Different keyboard rows bloom into bubbles, flowers, stars, rings, pinwheels, and comets.
 
 ![KeyBloom responding to a sequence of key presses with colorful animated effects](Assets/readme/visualizations.gif)
+
+### Jelly Bounce
+
+Each key press pops up a squishy critter at the key's spot. Every keyboard row has its own critter: antennas on the number row, bunny ears on the top letter row, sprouts on the home row, and bear ears on the bottom row. Critters squash when they land, turn to look at each new arrival, and keep bouncing while a key is held. Space and multi-key chords send a trampoline wave rippling outward.
+
+![Jelly Bounce critters hopping up at each key press, then bouncing in a wave after Space is pressed](Assets/readme/jelly-bounce.gif)
 
 ## Behavior
 
