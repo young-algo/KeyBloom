@@ -34,6 +34,7 @@ struct LaunchView: View {
             coordinator.refreshAccessibilityPermission()
             resetPreview()
         }
+        .onChange(of: coordinator.style) { _, _ in resetPreview() }
         .onChange(of: coordinator.palette) { _, _ in resetPreview() }
         .onChange(of: coordinator.showLabels) { _, _ in resetPreview() }
         .onChange(of: coordinator.calmMotion) { _, _ in resetPreview() }
@@ -64,6 +65,12 @@ struct LaunchView: View {
 
     private var settings: some View {
         VStack(spacing: 0) {
+            SettingRow(title: "Style", subtitle: coordinator.style.subtitle) {
+                StylePicker(selection: $coordinator.style)
+            }
+
+            divider
+
             SettingRow(title: "Colors", subtitle: coordinator.palette.subtitle) {
                 PaletteSwatches(selection: $coordinator.palette)
             }
@@ -220,12 +227,50 @@ struct LaunchView: View {
 
     private func resetPreview() {
         previewModel.reset(
+            style: coordinator.style,
             palette: coordinator.palette,
             showLabels: coordinator.showLabels,
             calmMotion: coordinator.calmMotion
         )
         previewSamples.prefix(3).forEach { sample in
             previewModel.registerKey(keyCode: sample.keyCode, at: sample.position)
+        }
+    }
+}
+
+private struct StylePicker: View {
+    @Binding var selection: VisualizationStyle
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(VisualizationStyle.allCases) { style in
+                let isSelected = selection == style
+                Button {
+                    selection = style
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: style.iconName)
+                            .font(.system(size: 12, weight: .bold))
+                        Text(style.title)
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .foregroundStyle(isSelected ? .black.opacity(0.84) : .white.opacity(0.82))
+                    .background(
+                        isSelected ? .white : .white.opacity(0.10),
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .stroke(isSelected ? .white : .white.opacity(0.16), lineWidth: 1)
+                    }
+                }
+                .buttonStyle(.plain)
+                .help(style.subtitle)
+                .accessibilityLabel(style.title)
+                .accessibilityAddTraits(isSelected ? .isSelected : [])
+            }
         }
     }
 }

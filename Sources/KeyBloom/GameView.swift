@@ -13,13 +13,26 @@ struct GameView: View {
                     palette: model.palette,
                     calmMotion: model.calmMotion
                 )
-                for burst in model.bursts {
-                    BloomRenderer.draw(
-                        burst: burst,
+                switch model.style {
+                case .blooms:
+                    for burst in model.bursts {
+                        BloomRenderer.draw(
+                            burst: burst,
+                            in: &context,
+                            size: size,
+                            date: timeline.date,
+                            showLabel: model.showLabels,
+                            calmMotion: model.calmMotion
+                        )
+                    }
+                case .jellyBounce:
+                    JellyBounceRenderer.drawScene(
+                        bursts: model.bursts,
+                        trampolines: model.trampolineEvents,
                         in: &context,
                         size: size,
                         date: timeline.date,
-                        showLabel: model.showLabels,
+                        showLabels: model.showLabels,
                         calmMotion: model.calmMotion
                     )
                 }

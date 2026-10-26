@@ -1,5 +1,39 @@
 import SwiftUI
 
+enum VisualizationStyle: String, CaseIterable, Identifiable {
+    case blooms
+    case jellyBounce
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .blooms:
+            return "Blooms"
+        case .jellyBounce:
+            return "Jelly Bounce"
+        }
+    }
+
+    var subtitle: String {
+        switch self {
+        case .blooms:
+            return "Flowers, stars, bubbles, and pinwheels"
+        case .jellyBounce:
+            return "Squishy bouncy critters that hop at each key"
+        }
+    }
+
+    var iconName: String {
+        switch self {
+        case .blooms:
+            return "sparkles"
+        case .jellyBounce:
+            return "face.smiling.inverse"
+        }
+    }
+}
+
 enum BloomPalette: String, CaseIterable, Identifiable {
     case rainbow
     case ocean

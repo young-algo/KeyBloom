@@ -8,6 +8,10 @@ final class GameCoordinator: ObservableObject {
 
     let model = GameModel()
 
+    @Published var style: VisualizationStyle {
+        didSet { defaults.set(style.rawValue, forKey: Keys.style) }
+    }
+
     @Published var palette: BloomPalette {
         didSet { defaults.set(palette.rawValue, forKey: Keys.palette) }
     }
@@ -45,6 +49,7 @@ final class GameCoordinator: ObservableObject {
     private var exitModifiersHeld = false
 
     private enum Keys {
+        static let style = "style"
         static let palette = "palette"
         static let showLabels = "showLabels"
         static let calmMotion = "calmMotion"
@@ -54,6 +59,7 @@ final class GameCoordinator: ObservableObject {
     private init() {
         let defaults = UserDefaults.standard
         self.defaults = defaults
+        style = VisualizationStyle(rawValue: defaults.string(forKey: Keys.style) ?? "") ?? .blooms
         palette = BloomPalette(rawValue: defaults.string(forKey: Keys.palette) ?? "") ?? .rainbow
         showLabels = defaults.object(forKey: Keys.showLabels) as? Bool ?? true
         calmMotion = defaults.object(forKey: Keys.calmMotion) as? Bool ?? true
@@ -91,6 +97,7 @@ final class GameCoordinator: ObservableObject {
 
         let systemPrefersCalm = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
         model.reset(
+            style: style,
             palette: palette,
             showLabels: showLabels,
             calmMotion: calmMotion || systemPrefersCalm

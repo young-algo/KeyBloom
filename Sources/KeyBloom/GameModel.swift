@@ -14,6 +14,19 @@ enum BloomKind: Int, CaseIterable {
     var title: String { String(describing: self).capitalized }
 }
 
+/// One continuous hold of a key: pulses no more than `AppConfig.holdStreakGap` apart.
+struct HoldStreak {
+    let startedAt: Date
+    var lastPulseAt: Date
+}
+
+/// Space and multi-key chords bounce every critter like a trampoline.
+struct TrampolineEvent {
+    let date: Date
+    /// Normalized screen position the wave starts from.
+    let origin: CGPoint
+}
+
 struct BloomBurst: Identifiable {
     let id: UUID
     let createdAt: Date
@@ -25,7 +38,10 @@ struct BloomBurst: Identifiable {
     let intensity: CGFloat
     var lifetime: TimeInterval
     var lastPulseAt: Date?
+    var pulseCount: Int
+    var holdStreaks: [HoldStreak]
     let heading: CGFloat?
+    let row: Int?
 
     init(
         id: UUID = UUID(),
@@ -38,7 +54,10 @@ struct BloomBurst: Identifiable {
         intensity: CGFloat,
         lifetime: TimeInterval,
         lastPulseAt: Date? = nil,
-        heading: CGFloat? = nil
+        pulseCount: Int = 0,
+        holdStreaks: [HoldStreak] = [],
+        heading: CGFloat? = nil,
+        row: Int? = nil
     ) {
         self.id = id
         self.createdAt = createdAt
@@ -50,7 +69,10 @@ struct BloomBurst: Identifiable {
         self.intensity = intensity
         self.lifetime = lifetime
         self.lastPulseAt = lastPulseAt
+        self.pulseCount = pulseCount
+        self.holdStreaks = holdStreaks
         self.heading = heading
+        self.row = row
     }
 }
 
@@ -58,15 +80,23 @@ final class GameModel: ObservableObject {
     @Published private(set) var bursts: [BloomBurst] = []
     @Published private(set) var pressCount = 0
     @Published var unlockStartedAt: Date?
+    @Published private(set) var style: VisualizationStyle = .blooms
     @Published private(set) var palette: BloomPalette = .rainbow
     @Published private(set) var showLabels = true
     @Published private(set) var calmMotion = true
+    @Published private(set) var trampolineEvents: [TrampolineEvent] = []
 
     private var latestBurstByKey: [UInt16: UUID] = [:]
     private var recentSpawns: [TimeInterval] = []
     private var lastDragSpawn: TimeInterval = 0
 
-    func reset(palette: BloomPalette, showLabels: Bool, calmMotion: Bool) {
+    func reset(
+        style: VisualizationStyle = .blooms,
+        palette: BloomPalette,
+        showLabels: Bool,
+        calmMotion: Bool
+    ) {
+        self.style = style
         self.palette = palette
         self.showLabels = showLabels
         self.calmMotion = calmMotion
@@ -76,6 +106,7 @@ final class GameModel: ObservableObject {
         lastDragSpawn = 0
         pressCount = 0
         unlockStartedAt = nil
+        trampolineEvents.removeAll()
     }
 
     func registerKey(
@@ -99,9 +130,13 @@ final class GameModel: ObservableObject {
             x: clamp(base.x + CGFloat.random(in: -jitter...jitter), lower: 0.06, upper: 0.94),
             y: clamp(base.y + CGFloat.random(in: -jitter...jitter), lower: 0.10, upper: 0.91)
         )
+        let now = Date()
+        if keyCode == 49 {
+            recordTrampoline(from: position, at: now)
+        }
         let kind = Self.kind(for: keyCode, pressCount: pressCount)
         let burst = BloomBurst(
-            createdAt: Date(),
+            createdAt: now,
             position: position,
             hue: palette.hue(forKeyCode: keyCode),
             label: label ?? KeyboardLayout.label(for: keyCode),
@@ -109,7 +144,8 @@ final class GameModel: ObservableObject {
             seed: UInt64.random(in: UInt64.min...UInt64.max),
             intensity: CGFloat.random(in: 0.88...1.15),
             lifetime: adjustedLifetime(for: kind),
-            heading: nil
+            heading: nil,
+            row: KeyboardLayout.row(for: keyCode)
         )
         append(burst)
         latestBurstByKey[keyCode] = burst.id
@@ -122,14 +158,17 @@ final class GameModel: ObservableObject {
 
     func registerChord(keyCount: Int) {
         pruneExpiredBursts()
+        let now = Date()
+        let position = CGPoint(x: CGFloat.random(in: 0.25...0.75), y: CGFloat.random(in: 0.28...0.70))
+        recordTrampoline(from: position, at: now)
         guard spawnBudgetAllows() else {
             pulseLastBurst()
             return
         }
         pressCount += 1
         append(BloomBurst(
-            createdAt: Date(),
-            position: CGPoint(x: CGFloat.random(in: 0.25...0.75), y: CGFloat.random(in: 0.28...0.70)),
+            createdAt: now,
+            position: position,
             hue: palette.hue(forEvent: pressCount + keyCount * 5),
             label: keyCount >= 5 ? "WOW" : "✦",
             kind: .confetti,
@@ -240,11 +279,36 @@ final class GameModel: ObservableObject {
     }
 
     private func pulse(at index: Int) {
-        bursts[index].lastPulseAt = Date()
+        let now = Date()
+        bursts[index].lastPulseAt = now
+        bursts[index].pulseCount += 1
+        extendHoldStreak(at: index, now: now)
         bursts[index].lifetime = min(
             bursts[index].lifetime + 0.25,
             AppConfig.confettiLifetime * AppConfig.calmLifetimeMultiplier
         )
+    }
+
+    /// Pulses close together count as one hold, so the renderer can tell when it began and ended.
+    private func extendHoldStreak(at index: Int, now: Date) {
+        if let last = bursts[index].holdStreaks.indices.last,
+           now.timeIntervalSince(bursts[index].holdStreaks[last].lastPulseAt) <= AppConfig.holdStreakGap {
+            bursts[index].holdStreaks[last].lastPulseAt = now
+            return
+        }
+        bursts[index].holdStreaks.append(HoldStreak(startedAt: now, lastPulseAt: now))
+        if bursts[index].holdStreaks.count > AppConfig.maximumHoldStreaks {
+            bursts[index].holdStreaks.removeFirst()
+        }
+    }
+
+    private func recordTrampoline(from origin: CGPoint, at date: Date) {
+        if let last = trampolineEvents.last,
+           date.timeIntervalSince(last.date) < AppConfig.trampolineMinimumInterval {
+            return
+        }
+        trampolineEvents.removeAll { date.timeIntervalSince($0.date) > AppConfig.trampolineMemory }
+        trampolineEvents.append(TrampolineEvent(date: date, origin: origin))
     }
 
     private func spawnBudgetAllows() -> Bool {

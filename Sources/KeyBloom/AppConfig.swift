@@ -31,4 +31,12 @@ enum AppConfig {
     static let repeatKeyMinimumInterval: TimeInterval = 0.065
     static let dragTrailInterval: TimeInterval = 0.045
     static let maximumSpawnsPerHalfSecond = 6
+
+    /// Pulses closer together than this belong to one key hold.
+    static let holdStreakGap: TimeInterval = 0.16
+    static let maximumHoldStreaks = 6
+    /// Trampoline waves are spaced out so mashing Space stays readable.
+    static let trampolineMinimumInterval: TimeInterval = 0.25
+    /// Longest a trampoline wave can still be moving a critter.
+    static let trampolineMemory: TimeInterval = 5.0
 }
